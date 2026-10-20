@@ -1,0 +1,76 @@
+# =============================================================
+# Prometheus Configuration — Student Management System
+# =============================================================
+#
+# BEGINNER EXPLANATION:
+# Prometheus is a monitoring system. It works by "scraping" —
+# it visits each target URL on a schedule and collects metrics.
+#
+# This file tells Prometheus:
+#   1. How often to collect metrics (every 15 seconds)
+#   2. Which targets to scrape (our app + Windows Exporter)
+#   3. Where to find alert rules
+# =============================================================
+
+global:
+  # How often Prometheus collects metrics from each target
+  scrape_interval: 15s
+
+  # How often Prometheus checks alert rules
+  evaluation_interval: 15s
+
+  # Labels added to every metric from this Prometheus instance
+  external_labels:
+    environment: 'local'
+    project: 'student-management'
+
+# ── Alert Rules ─────────────────────────────────────────────
+# Load alert rules from this file
+rule_files:
+  - "alert-rules.yml"
+
+# ── Scrape Configurations ────────────────────────────────────
+# Each 'job' defines a set of targets to scrape
+scrape_configs:
+
+  # 1. Prometheus itself (always included for self-monitoring)
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+        labels:
+          instance: 'prometheus-server'
+
+  # 2. Flask Application — custom /metrics endpoint
+  #    This collects request counts, latency, etc.
+  - job_name: 'student-management-app'
+    static_configs:
+      - targets: ['localhost:5001']
+        labels:
+          app: 'student-management'
+          instance: 'flask-app'
+    # Prometheus expects metrics at /metrics by default
+    metrics_path: '/metrics'
+    # Scrape the app every 10 seconds (more frequent for demo)
+    scrape_interval: 10s
+
+  # 3. Windows Exporter — system metrics (CPU, memory, disk, network)
+  #    Download from: https://github.com/prometheus-community/windows_exporter
+  #    Default port: 9182
+  - job_name: 'windows-exporter'
+    static_configs:
+      - targets: ['localhost:9182']
+        labels:
+          instance: 'windows-host'
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  # 4. Application health check via blackbox probe
+  #    Uses HTTP GET to verify the app responds to /health
+  - job_name: 'app-health-check'
+    metrics_path: '/health'
+    params:
+      format: ['json']
+    static_configs:
+      - targets: ['localhost:5001']
+        labels:
+          instance: 'flask-app-health'

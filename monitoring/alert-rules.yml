@@ -1,0 +1,110 @@
+# =============================================================
+# Alert Rules — Student Management System
+# =============================================================
+#
+# BEGINNER EXPLANATION:
+# Alert rules define conditions that Prometheus watches for.
+# When a condition is TRUE for longer than the 'for' duration,
+# the alert moves from PENDING → FIRING.
+#
+# States:
+#   Inactive → condition not yet met
+#   Pending  → condition met, waiting 'for' duration
+#   Firing   → alert is active, notification sent
+#
+# Each alert has:
+#   alert  → unique name
+#   expr   → PromQL query that must be TRUE to fire
+#   for    → how long condition must hold before firing
+#   labels → severity (critical / warning / info)
+#   annotations → human-readable description shown in Grafana
+# =============================================================
+
+groups:
+
+  # ── Application Availability Alerts ──────────────────────
+  - name: application_availability
+    rules:
+
+      # Alert 1: Application Down
+      # Fires when Prometheus cannot scrape the /metrics endpoint
+      # for more than 30 seconds — means the app is unreachable.
+      - alert: StudentManagementAppDown
+        expr: up{job="student-management-app"} == 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Student Management app is DOWN"
+          description: |
+            The Student Management System at {{ $labels.instance }}
+            has been unreachable for more than 30 seconds.
+            Last seen: {{ $value }}
+          runbook: "Check: docker ps, docker logs student-management-app"
+
+  # ── System Resource Alerts ────────────────────────────────
+  - name: system_resources
+    rules:
+
+      # Alert 2: High CPU Usage
+      # Fires when CPU usage stays above 80% for 5 minutes.
+      # The Windows Exporter metric is different from Linux node_exporter.
+      - alert: HighCPUUsage
+        expr: |
+          (1 - avg(rate(windows_cpu_time_total{mode="idle"}[5m]))) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage on Windows host"
+          description: |
+            CPU usage is {{ $value | printf "%.1f" }}% which is above 80%.
+            Sustained high CPU may affect application performance.
+
+      # Alert 3: Low Available Memory
+      # Fires when available memory drops below 500 MB.
+      - alert: LowMemoryAvailable
+        expr: |
+          windows_memory_available_bytes < 500 * 1024 * 1024
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low available memory on Windows host"
+          description: |
+            Available memory is {{ $value | humanize }}B which is below 500 MB.
+            Consider closing unused applications.
+
+      # Alert 4: Low Disk Space
+      # Fires when the C: drive has less than 10% free space.
+      - alert: LowDiskSpace
+        expr: |
+          (windows_logical_disk_free_bytes{volume="C:"} /
+           windows_logical_disk_size_bytes{volume="C:"}) * 100 < 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low disk space on C: drive"
+          description: |
+            C: drive has {{ $value | printf "%.1f" }}% free space remaining.
+            Clean up disk space to prevent application failures.
+
+  # ── Demonstrable Alert (for college demo) ────────────────
+  - name: demo_alerts
+    rules:
+
+      # Alert 5: Any CPU Spike (low threshold for easy demo)
+      # Use this in demonstrations — fires when CPU > 10% for 1 min
+      # This is easy to trigger deliberately for your viva demo.
+      - alert: CPUSpikeDemo
+        expr: |
+          (1 - avg(rate(windows_cpu_time_total{mode="idle"}[1m]))) * 100 > 10
+        for: 1m
+        labels:
+          severity: info
+        annotations:
+          summary: "CPU activity detected (demo alert)"
+          description: |
+            CPU usage is {{ $value | printf "%.1f" }}%.
+            This alert demonstrates Prometheus alerting functionality.
