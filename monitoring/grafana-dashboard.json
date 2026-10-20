@@ -1,0 +1,366 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "student-mgmt-dashboard",
+    "title": "Student Management System — DevOps Dashboard",
+    "description": "End-to-end monitoring for the Student Management System Flask application",
+    "tags": ["devops", "student-management", "flask", "prometheus"],
+    "timezone": "browser",
+    "editable": true,
+    "refresh": "10s",
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "panels": [
+      {
+        "id": 1,
+        "title": "System Overview",
+        "type": "row",
+        "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+        "collapsed": false
+      },
+      {
+        "id": 2,
+        "title": "Flask App Status",
+        "type": "stat",
+        "gridPos": { "h": 4, "w": 4, "x": 0, "y": 1 },
+        "datasource": { "type": "prometheus", "uid": "dg1trqll9yio0d" },
+        "targets": [
+          {
+            "expr": "up{job=\"student-management-app\"}",
+            "legendFormat": "Flask App"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "mappings": [
+              { "type": "value", "options": { "0": { "text": "DOWN", "color": "red" }, "1": { "text": "UP", "color": "green" } } }
+            ],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": null },
+                { "color": "green", "value": 1 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 3,
+        "title": "Prometheus Status",
+        "type": "stat",
+        "gridPos": { "h": 4, "w": 4, "x": 4, "y": 1 },
+        "datasource": { "type": "prometheus", "uid": "dg1trqll9yio0d" },
+        "targets": [
+          {
+            "expr": "up{job=\"prometheus\"}",
+            "legendFormat": "Prometheus"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "mappings": [
+              { "type": "value", "options": { "0": { "text": "DOWN", "color": "red" }, "1": { "text": "UP", "color": "green" } } }
+            ],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": null },
+                { "color": "green", "value": 1 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 4,
+        "title": "Windows Exporter Status",
+        "type": "stat",
+        "gridPos": { "h": 4, "w": 4, "x": 8, "y": 1 },
+        "datasource": { "type": "prometheus", "uid": "dg1trqll9yio0d" },
+        "targets": [
+          {
+            "expr": "up{job=\"windows-exporter\"}",
+            "legendFormat": "Windows Exporter"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "mappings": [
+              { "type": "value", "options": { "0": { "text": "DOWN", "color": "red" }, "1": { "text": "UP", "color": "green" } } }
+            ],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": null },
+                { "color": "green", "value": 1 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 5,
+        "title": "Scrape Targets Up",
+        "type": "gauge",
+        "gridPos": { "h": 4, "w": 4, "x": 12, "y": 1 },
+        "datasource": { "type": "prometheus", "uid": "dg1trqll9yio0d" },
+        "targets": [
+          {
+            "expr": "count(up == 1)",
+            "legendFormat": "Targets UP"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "min": 0,
+            "max": 4,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": null },
+                { "color": "yellow", "value": 2 },
+                { "color": "green", "value": 4 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 6,
+        "title": "Active Alerts",
+        "type": "stat",
+        "gridPos": { "h": 4, "w": 4, "x": 16, "y": 1 },
+        "datasource": { "type": "prometheus", "uid": "dg1trqll9yio0d" },
+        "targets": [
+          {
+            "expr": "count(ALERTS{alertstate=\"firing\"}) or vector(0)",
+            "legendFormat": "Firing"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": null },
+                { "color": "orange", "value": 1 },
+                { "color": "red", "value": 3 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 7,
+        "title": "System Uptime",
+        "type": "stat",
+        "gridPos": { "h": 4, "w": 4, "x": 20, "y": 1 },
+        "datasource": { "type": "prometheus", "uid": "dg1trqll9yio0d" },
+        "targets": [
+          {
+            "expr": "windows_os_time - windows_os_boot_time",
+            "legendFormat": "Uptime"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s"
+          }
+        }
+      },
+      {
+        "id": 10,
+        "title": "CPU & Memory",
+        "type": "row",
+        "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
+        "collapsed": false
+      },
+      {
+        "id": 11,
+        "title": "CPU Usage %",
+        "type": "timeseries",
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
+        "datasource": { "type": "prometheus", "uid": "dg1trqll9yio0d" },
+        "targets": [
+          {
+            "expr": "(1 - avg(rate(windows_cpu_time_total{mode=\"idle\"}[1m]))) * 100",
+            "legendFormat": "CPU Usage %"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "min": 0,
+            "max": 100,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": null },
+                { "color": "yellow", "value": 60 },
+                { "color": "red", "value": 80 }
+              ]
+            },
+            "custom": {
+              "fillOpacity": 20,
+              "lineWidth": 2,
+              "gradientMode": "scheme"
+            }
+          }
+        }
+      },
+      {
+        "id": 12,
+        "title": "Memory Usage",
+        "type": "timeseries",
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
+        "datasource": { "type": "prometheus", "uid": "dg1trqll9yio0d" },
+        "targets": [
+          {
+            "expr": "windows_memory_available_bytes / 1024 / 1024",
+            "legendFormat": "Available Memory (MB)"
+          },
+          {
+            "expr": "(windows_cs_physical_memory_bytes - windows_memory_available_bytes) / 1024 / 1024",
+            "legendFormat": "Used Memory (MB)"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "decmbytes",
+            "custom": {
+              "fillOpacity": 20,
+              "lineWidth": 2,
+              "stacking": { "mode": "normal" }
+            }
+          }
+        }
+      },
+      {
+        "id": 20,
+        "title": "Disk & Network",
+        "type": "row",
+        "gridPos": { "h": 1, "w": 24, "x": 0, "y": 14 },
+        "collapsed": false
+      },
+      {
+        "id": 21,
+        "title": "Disk Space (C: Drive)",
+        "type": "gauge",
+        "gridPos": { "h": 7, "w": 8, "x": 0, "y": 15 },
+        "datasource": { "type": "prometheus", "uid": "dg1trqll9yio0d" },
+        "targets": [
+          {
+            "expr": "(windows_logical_disk_free_bytes{volume=\"C:\"} / windows_logical_disk_size_bytes{volume=\"C:\"}) * 100",
+            "legendFormat": "C: Free %"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "min": 0,
+            "max": 100,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": null },
+                { "color": "yellow", "value": 15 },
+                { "color": "green", "value": 30 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 22,
+        "title": "Network Traffic (bytes/sec)",
+        "type": "timeseries",
+        "gridPos": { "h": 7, "w": 16, "x": 8, "y": 15 },
+        "datasource": { "type": "prometheus", "uid": "dg1trqll9yio0d" },
+        "targets": [
+          {
+            "expr": "rate(windows_net_bytes_received_total[1m])",
+            "legendFormat": "Received {{ nic }}"
+          },
+          {
+            "expr": "rate(windows_net_bytes_sent_total[1m])",
+            "legendFormat": "Sent {{ nic }}"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "Bps",
+            "custom": {
+              "fillOpacity": 10,
+              "lineWidth": 2
+            }
+          }
+        }
+      },
+      {
+        "id": 30,
+        "title": "Flask Application Metrics",
+        "type": "row",
+        "gridPos": { "h": 1, "w": 24, "x": 0, "y": 22 },
+        "collapsed": false
+      },
+      {
+        "id": 31,
+        "title": "Flask HTTP Requests (total)",
+        "type": "stat",
+        "gridPos": { "h": 4, "w": 6, "x": 0, "y": 23 },
+        "datasource": { "type": "prometheus", "uid": "dg1trqll9yio0d" },
+        "targets": [
+          {
+            "expr": "flask_http_request_total",
+            "legendFormat": "Total Requests"
+          }
+        ]
+      },
+      {
+        "id": 32,
+        "title": "Flask Requests by Method",
+        "type": "piechart",
+        "gridPos": { "h": 7, "w": 8, "x": 6, "y": 23 },
+        "datasource": { "type": "prometheus", "uid": "dg1trqll9yio0d" },
+        "targets": [
+          {
+            "expr": "flask_http_request_total",
+            "legendFormat": "{{ method }} {{ status }}"
+          }
+        ]
+      },
+      {
+        "id": 33,
+        "title": "Process Memory (Flask)",
+        "type": "timeseries",
+        "gridPos": { "h": 7, "w": 10, "x": 14, "y": 23 },
+        "datasource": { "type": "prometheus", "uid": "dg1trqll9yio0d" },
+        "targets": [
+          {
+            "expr": "process_resident_memory_bytes{job=\"student-management-app\"} / 1024 / 1024",
+            "legendFormat": "RSS (MB)"
+          },
+          {
+            "expr": "process_virtual_memory_bytes{job=\"student-management-app\"} / 1024 / 1024",
+            "legendFormat": "Virtual (MB)"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "decmbytes",
+            "custom": {
+              "fillOpacity": 15,
+              "lineWidth": 2
+            }
+          }
+        }
+      }
+    ],
+    "schemaVersion": 39,
+    "version": 1
+  },
+  "overwrite": true
+}
