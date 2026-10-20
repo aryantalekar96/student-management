@@ -1,0 +1,38 @@
+# Byte-compiled / cached
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+.venv/
+env/
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Database (local dev — container uses a volume)
+students.db
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Distribution / packaging
+*.egg-info/
+dist/
+build/
+
+# Test / coverage
+.pytest_cache/
+htmlcov/
+.coverage
+
+# Environment variables
+.env
+.env.local

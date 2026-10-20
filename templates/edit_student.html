@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Student — Student Management System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-brand">
+            <span class="nav-icon">🎓</span>
+            <span class="nav-title">Student Management System</span>
+        </div>
+        <div class="nav-links">
+            <a href="{{ url_for('index') }}" class="nav-link">Home</a>
+            <a href="{{ url_for('students') }}" class="nav-link">View Students</a>
+            <a href="{{ url_for('add_student') }}" class="nav-link">Add Student</a>
+        </div>
+    </nav>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flash-container">
+                {% for category, message in messages %}
+                    <div class="flash flash-{{ category }}">
+                        {{ message }}
+                        <button class="flash-close" onclick="this.parentElement.remove()">×</button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <!-- Edit Student Form -->
+    <main class="container">
+        <div class="form-card">
+            <h2>✏️ Edit Student #{{ student.id }}</h2>
+            <form method="POST" action="{{ url_for('edit_student', student_id=student.id) }}" novalidate>
+                <div class="form-group">
+                    <label for="name">Full Name</label>
+                    <input type="text" id="name" name="name" placeholder="e.g. Rahul Sharma"
+                           value="{{ student.name }}" required minlength="2">
+                </div>
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" name="email" placeholder="e.g. rahul@example.com"
+                           value="{{ student.email }}" required>
+                </div>
+                <div class="form-group">
+                    <label for="course">Course</label>
+                    <input type="text" id="course" name="course" placeholder="e.g. Computer Engineering"
+                           value="{{ student.course }}" required>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Update Student</button>
+                    <a href="{{ url_for('students') }}" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p>Student Management System &mdash; DevOps Mini-Project &copy; 2026</p>
+    </footer>
+</body>
+</html>

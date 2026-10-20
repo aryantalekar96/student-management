@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Students — Student Management System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-brand">
+            <span class="nav-icon">🎓</span>
+            <span class="nav-title">Student Management System</span>
+        </div>
+        <div class="nav-links">
+            <a href="{{ url_for('index') }}" class="nav-link">Home</a>
+            <a href="{{ url_for('students') }}" class="nav-link active">View Students</a>
+            <a href="{{ url_for('add_student') }}" class="nav-link">Add Student</a>
+        </div>
+    </nav>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flash-container">
+                {% for category, message in messages %}
+                    <div class="flash flash-{{ category }}">
+                        {{ message }}
+                        <button class="flash-close" onclick="this.parentElement.remove()">×</button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <!-- Students Table -->
+    <main class="container">
+        <div class="table-header">
+            <h2>📋 All Students</h2>
+            <a href="{{ url_for('add_student') }}" class="btn btn-primary">➕ Add Student</a>
+        </div>
+
+        {% if students %}
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Course</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for student in students %}
+                    <tr>
+                        <td>{{ student.id }}</td>
+                        <td>{{ student.name }}</td>
+                        <td>{{ student.email }}</td>
+                        <td>{{ student.course }}</td>
+                        <td class="actions">
+                            <a href="{{ url_for('edit_student', student_id=student.id) }}"
+                               class="btn btn-sm btn-edit" title="Edit">✏️ Edit</a>
+                            <form method="POST"
+                                  action="{{ url_for('delete_student', student_id=student.id) }}"
+                                  class="inline-form"
+                                  onsubmit="return confirm('Are you sure you want to delete {{ student.name }}?')">
+                                <button type="submit" class="btn btn-sm btn-delete" title="Delete">
+                                    🗑️ Delete
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <p class="record-count">Total students: {{ students|length }}</p>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">📭</div>
+            <h3>No students yet</h3>
+            <p>Start by adding your first student record.</p>
+            <a href="{{ url_for('add_student') }}" class="btn btn-primary">➕ Add First Student</a>
+        </div>
+        {% endif %}
+    </main>
+
+    <footer class="footer">
+        <p>Student Management System &mdash; DevOps Mini-Project &copy; 2026</p>
+    </footer>
+</body>
+</html>
