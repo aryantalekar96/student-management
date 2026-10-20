@@ -29,7 +29,7 @@ pipeline {
     // automatically — it increments with each build (1, 2, 3, …)
     environment {
         // Docker Hub username — CHANGE THIS to your Docker Hub username
-        DOCKER_HUB_USER  = "your-dockerhub-username"
+        DOCKER_HUB_USER  = "aryantalekar96"
         IMAGE_NAME       = "student-management"
         IMAGE_TAG        = "${BUILD_NUMBER}"
         FULL_IMAGE       = "${DOCKER_HUB_USER}/${IMAGE_NAME}:${IMAGE_TAG}"
