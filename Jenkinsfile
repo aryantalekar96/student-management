@@ -169,18 +169,20 @@ pipeline {
                     if (isUnix()) {
                         sh """
                             docker volume create ${DATA_VOLUME} || true
+                            docker network create student-management_monitoring-net || true
                             docker stop ${CONTAINER_NAME} || true
                             docker rm   ${CONTAINER_NAME} || true
-                            docker run -d --name ${CONTAINER_NAME} --restart unless-stopped -p ${APP_PORT}:5000 -v ${DATA_VOLUME}:/app/data ${LATEST_IMAGE}
+                            docker run -d --name ${CONTAINER_NAME} --restart unless-stopped --network student-management_monitoring-net --network-alias app -p ${APP_PORT}:5000 -v ${DATA_VOLUME}:/app/data ${LATEST_IMAGE}
                             sleep 4
                             docker ps
                         """
                     } else {
                         bat """
                             docker volume create ${DATA_VOLUME} || verify > nul
+                            docker network create student-management_monitoring-net || verify > nul
                             docker stop ${CONTAINER_NAME} || verify > nul
                             docker rm   ${CONTAINER_NAME} || verify > nul
-                            docker run -d --name ${CONTAINER_NAME} --restart unless-stopped -p ${APP_PORT}:5000 -v ${DATA_VOLUME}:/app/data ${LATEST_IMAGE}
+                            docker run -d --name ${CONTAINER_NAME} --restart unless-stopped --network student-management_monitoring-net --network-alias app -p ${APP_PORT}:5000 -v ${DATA_VOLUME}:/app/data ${LATEST_IMAGE}
                             timeout /t 4 /nobreak > nul
                             docker ps
                         """

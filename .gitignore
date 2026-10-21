@@ -17,6 +17,7 @@ env/
 
 # Database (local dev — container uses a volume)
 students.db
+data/
 
 # OS files
 .DS_Store

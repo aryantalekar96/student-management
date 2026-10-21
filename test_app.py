@@ -306,6 +306,12 @@ class TestHealthCheck:
         data = response.get_json()
         assert data["status"] == "healthy"
 
+    def test_metrics_returns_prometheus_data(self, client):
+        """The metrics endpoint should return prometheus formatted metrics."""
+        response = client.get("/metrics")
+        assert response.status_code == 200
+        assert b"flask_http_request_total" in response.data
+
 
 # ---------------------------------------------------------------------------
 # Test: HTTP Methods

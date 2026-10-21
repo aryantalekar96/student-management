@@ -1,0 +1,70 @@
+services:
+  # ── 1. Flask Application ──────────────────────────────────────────
+  app:
+    build: .
+    image: student-management:latest
+    container_name: student-management-app
+    restart: unless-stopped
+    ports:
+      - "5001:5000"
+    environment:
+      - FLASK_ENV=development
+      - DATABASE_PATH=/app/data/students.db
+    volumes:
+      - student-data:/app/data
+      - ./app.py:/app/app.py
+      - ./templates:/app/templates
+      - ./static:/app/static
+    networks:
+      - monitoring-net
+
+  # ── 2. Prometheus Server ──────────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus-server
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.enable-lifecycle"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/alert-rules.yml:/etc/prometheus/alert-rules.yml:ro
+      - prometheus-data:/prometheus
+    networks:
+      - monitoring-net
+    depends_on:
+      - app
+
+  # ── 3. Grafana Dashboard ──────────────────────────────────────────
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana-dashboard
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./monitoring/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./monitoring/grafana-dashboard.json:/var/lib/grafana/dashboards/grafana-dashboard.json:ro
+    networks:
+      - monitoring-net
+    depends_on:
+      - prometheus
+
+volumes:
+  student-data:
+    external: true
+  prometheus-data:
+  grafana-data:
+
+networks:
+  monitoring-net:
+    driver: bridge

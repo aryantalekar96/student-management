@@ -7,6 +7,7 @@ import os
 import re
 import sqlite3
 from flask import Flask, render_template, request, redirect, url_for, flash, g
+from prometheus_client import Counter, generate_latest, CONTENT_TYPE_LATEST
 
 # ---------------------------------------------------------------------------
 # Application factory-style setup
@@ -20,6 +21,21 @@ app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key-change-in-prod")
 app.config["DATABASE"] = os.environ.get(
     "DATABASE_PATH", os.path.join(app.root_path, "students.db")
 )
+
+# ---------------------------------------------------------------------------
+# Prometheus metrics setup
+# ---------------------------------------------------------------------------
+REQUEST_COUNT = Counter(
+    "flask_http_request_total",
+    "Total HTTP requests processed by Flask application",
+    ["method", "status"],
+)
+
+@app.after_request
+def record_metrics(response):
+    if request.path != "/metrics":
+        REQUEST_COUNT.labels(method=request.method, status=str(response.status_code)).inc()
+    return response
 
 
 # ---------------------------------------------------------------------------
@@ -203,6 +219,12 @@ def health():
         return {"status": "healthy"}, 200
     except Exception as exc:
         return {"status": "unhealthy", "error": str(exc)}, 500
+
+
+@app.route("/metrics")
+def metrics():
+    """Prometheus metrics endpoint."""
+    return generate_latest(), 200, {"Content-Type": CONTENT_TYPE_LATEST}
 
 
 # ---------------------------------------------------------------------------

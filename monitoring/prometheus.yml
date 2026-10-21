@@ -44,7 +44,7 @@ scrape_configs:
   #    This collects request counts, latency, etc.
   - job_name: 'student-management-app'
     static_configs:
-      - targets: ['localhost:5001']
+      - targets: ['app:5000']
         labels:
           app: 'student-management'
           instance: 'flask-app'
@@ -58,19 +58,8 @@ scrape_configs:
   #    Default port: 9182
   - job_name: 'windows-exporter'
     static_configs:
-      - targets: ['localhost:9182']
+      - targets: ['host.docker.internal:9182']
         labels:
           instance: 'windows-host'
     metrics_path: '/metrics'
     scrape_interval: 15s
-
-  # 4. Application health check via blackbox probe
-  #    Uses HTTP GET to verify the app responds to /health
-  - job_name: 'app-health-check'
-    metrics_path: '/health'
-    params:
-      format: ['json']
-    static_configs:
-      - targets: ['localhost:5001']
-        labels:
-          instance: 'flask-app-health'
