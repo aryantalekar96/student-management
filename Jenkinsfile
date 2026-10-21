@@ -221,13 +221,6 @@ pipeline {
             """
         }
         always {
-            script {
-                if (isUnix()) {
-                    sh 'rm -rf venv || true'
-                } else {
-                    bat 'if exist venv rmdir /s /q venv'
-                }
-            }
             echo 'Pipeline finished.'
         }
     }
