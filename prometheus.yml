@@ -67,9 +67,9 @@ scrape_configs:
   # For this project, blackbox_exporter probes the /health URL.
   # ---------------------------------------------------------------------------
   - job_name: 'student-app'
-    metrics_path: '/health'
+    metrics_path: '/metrics'
     static_configs:
-      - targets: ['host.docker.internal:5000']
+      - targets: ['student-app:5000']
         labels:
           service: 'student-management-app'
           environment: 'production'

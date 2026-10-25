@@ -8,7 +8,7 @@ This file is the HEART of the application.
 Flask reads this file and starts a web server.
 """
 
-from flask import Flask, render_template, request, redirect, url_for, jsonify
+from flask import Flask, render_template, request, redirect, url_for, jsonify, Response
 
 # --------------------------------------------------------------------------
 # Create the Flask application object.
@@ -137,6 +137,32 @@ def health():
 # These routes return JSON instead of HTML pages.
 # Useful for automated testing without a browser.
 # --------------------------------------------------------------------------
+
+# --------------------------------------------------------------------------
+# ROUTE 8: Prometheus Metrics Endpoint
+# URL  : http://localhost:5000/metrics
+# Prometheus scrapes this every 15 seconds.
+# Returns metrics in Prometheus text format (NOT JSON).
+# Format: metric_name{labels} value
+# --------------------------------------------------------------------------
+@app.route('/metrics')
+def metrics():
+    """Prometheus-compatible metrics endpoint."""
+    total = len(students)
+    output = [
+        '# HELP student_app_up Application is running (1=up, 0=down)',
+        '# TYPE student_app_up gauge',
+        'student_app_up 1',
+        '# HELP student_app_students_total Total number of students',
+        '# TYPE student_app_students_total gauge',
+        f'student_app_students_total {total}',
+        '# HELP student_app_info Application info',
+        '# TYPE student_app_info gauge',
+        'student_app_info{version="v1",app="student-management"} 1',
+    ]
+    return Response('\n'.join(output) + '\n', mimetype='text/plain; version=0.0.4')
+
+
 @app.route('/api/students', methods=['GET'])
 def api_get_students():
     """Return all students as JSON."""
