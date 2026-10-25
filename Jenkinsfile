@@ -186,13 +186,8 @@ pipeline {
                     usernameVariable: 'DOCKER_USR',
                     passwordVariable: 'DOCKER_PSW'
                 )]) {
-                    // Login using password piped via stdin (never appears in logs)
-                    bat "echo %DOCKER_PSW% | docker login -u %DOCKER_USR% --password-stdin"
-
-                    // Push the image to Docker Hub
+                    bat 'echo %DOCKER_PSW%| docker login -u %DOCKER_USR% --password-stdin'
                     bat "docker push ${FULL_IMAGE}"
-
-                    // Logout after push (security best practice)
                     bat "docker logout"
                 }
 
