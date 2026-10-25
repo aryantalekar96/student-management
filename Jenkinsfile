@@ -218,10 +218,12 @@ pipeline {
                 // -p 5000:5000   = expose port 5000 to the host
                 // --name         = give it a memorable name
                 // --restart always = auto-restart if machine reboots
-                bat "docker run -d -p ${APP_PORT}:${APP_PORT} --name ${CONTAINER_NAME} --restart always ${FULL_IMAGE}"
+                // --network = join monitoring network so Prometheus can reach the app
+                bat "docker run -d -p ${APP_PORT}:${APP_PORT} --name ${CONTAINER_NAME} --network student-management_monitoring-network --restart always ${FULL_IMAGE}"
 
                 // Wait 3 seconds for the container to fully start
-                bat 'timeout /t 3 /nobreak > nul'
+                // sleep() is a Jenkins built-in — works on all OS unlike 'timeout' (Windows-only)
+                sleep(time: 3, unit: 'SECONDS')
 
                 // Verify container is running — 'findstr' is Windows grep
                 bat "docker ps | findstr ${CONTAINER_NAME}"
