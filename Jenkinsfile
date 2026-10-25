@@ -39,7 +39,7 @@ pipeline {
     // -------------------------------------------------------------------------
     environment {
         // Your Docker Hub username — CHANGE THIS to your actual username
-        DOCKER_USERNAME  = 'yourdockerhubusername'
+        DOCKER_USERNAME  = 'aryantalekar96'
 
         // Image name (username/appname:tag)
         IMAGE_NAME       = "${DOCKER_USERNAME}/student-management"
