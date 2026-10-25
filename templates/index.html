@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Management System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎓 Student Management System</h1>
+            <p class="subtitle">A DevOps Mini-Project — Flask + Jenkins + Docker + Prometheus</p>
+        </header>
+
+        <nav class="nav-cards">
+            <a href="/students" class="card">
+                <span class="icon">📋</span>
+                <h2>View Students</h2>
+                <p>See all registered students</p>
+            </a>
+            <a href="/add" class="card">
+                <span class="icon">➕</span>
+                <h2>Add Student</h2>
+                <p>Register a new student</p>
+            </a>
+            <a href="/health" class="card">
+                <span class="icon">💚</span>
+                <h2>Health Check</h2>
+                <p>Check if the app is running</p>
+            </a>
+        </nav>
+
+        <footer>
+            <p>Pipeline: Git → GitHub → Jenkins → Docker → Deploy → Prometheus → Grafana</p>
+        </footer>
+    </div>
+</body>
+</html>

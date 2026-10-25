@@ -1,0 +1,32 @@
+# .gitignore
+# ----------
+# Files and folders listed here are IGNORED by Git.
+# They will NOT be uploaded to GitHub.
+
+# Python virtual environment (large, not needed — recreated via requirements.txt)
+venv/
+env/
+.venv/
+
+# Python compiled files (auto-generated, not source code)
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# PyTest cache
+.pytest_cache/
+.coverage
+
+# IDE files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Secrets — NEVER commit these
+*.env
+.env
+secrets.txt

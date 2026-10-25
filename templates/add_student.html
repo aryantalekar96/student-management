@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Page title changes based on whether we are adding or editing -->
+    <title>{% if student %}Edit Student{% else %}Add Student{% endif %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <!-- Show different heading for Add vs Edit -->
+            <h1>{% if student %}✏️ Edit Student{% else %}➕ Add New Student{% endif %}</h1>
+            <a href="/students" class="btn-back">← Back to Students</a>
+        </header>
+
+        <!--
+            The form action changes based on whether we are adding or editing:
+            - Adding:  POST to /add
+            - Editing: POST to /update/<id>
+        -->
+        <form method="POST"
+              action="{% if student %}/update/{{ student.id }}{% else %}/add{% endif %}"
+              class="student-form">
+
+            <div class="form-group">
+                <label for="name">Full Name</label>
+                <input type="text"
+                       id="name"
+                       name="name"
+                       placeholder="e.g. Rahul Sharma"
+                       value="{{ student.name if student else '' }}"
+                       required>
+            </div>
+
+            <div class="form-group">
+                <label for="age">Age</label>
+                <input type="number"
+                       id="age"
+                       name="age"
+                       placeholder="e.g. 20"
+                       min="10" max="60"
+                       value="{{ student.age if student else '' }}"
+                       required>
+            </div>
+
+            <div class="form-group">
+                <label for="course">Course</label>
+                <input type="text"
+                       id="course"
+                       name="course"
+                       placeholder="e.g. Computer Science"
+                       value="{{ student.course if student else '' }}"
+                       required>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    {% if student %}💾 Save Changes{% else %}➕ Add Student{% endif %}
+                </button>
+                <a href="/students" class="btn btn-cancel">Cancel</a>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

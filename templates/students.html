@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Students</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📋 All Students</h1>
+            <a href="/" class="btn-back">← Back to Home</a>
+        </header>
+
+        <div class="action-bar">
+            <a href="/add" class="btn btn-primary">➕ Add New Student</a>
+            <span class="count">Total: {{ students|length }} student(s)</span>
+        </div>
+
+        {% if students %}
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Age</th>
+                    <th>Course</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for student in students %}
+                <tr>
+                    <td>{{ student.id }}</td>
+                    <td>{{ student.name }}</td>
+                    <td>{{ student.age }}</td>
+                    <td>{{ student.course }}</td>
+                    <td>
+                        <a href="/update/{{ student.id }}" class="btn btn-edit">✏️ Edit</a>
+                        <a href="/delete/{{ student.id }}" class="btn btn-delete"
+                           onclick="return confirm('Delete {{ student.name }}?')">🗑️ Delete</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">
+            <p>📭 No students registered yet.</p>
+            <a href="/add" class="btn btn-primary">Add the first student</a>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>

@@ -1,0 +1,10 @@
+# requirements.txt
+# -----------------
+# This file lists every Python library this project needs.
+# Anyone can run:  pip install -r requirements.txt
+# ...and get the exact same environment.
+# Jenkins will also use this file during the "Install Dependencies" stage.
+
+flask==2.3.3
+pytest==7.4.3
+requests==2.33.0
