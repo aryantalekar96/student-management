@@ -1,0 +1,166 @@
+# docker-compose.yml
+# ===================
+# Docker Compose starts ALL containers together with ONE command:
+#   docker-compose up -d
+#
+# This file defines 4 services (containers):
+#   1. student-app   → Our Flask application
+#   2. prometheus    → Metrics collection
+#   3. grafana       → Dashboard and alerting UI
+#   4. node-exporter → System metrics (CPU, RAM, disk)
+#
+# ALL these containers run on the same Docker network (monitoring-network)
+# so they can talk to each other using their service names as hostnames.
+# For example, Prometheus can reach Grafana at http://grafana:3000
+
+version: '3.8'
+
+# =============================================================================
+# SERVICES: Each block is one container
+# =============================================================================
+services:
+
+  # ---------------------------------------------------------------------------
+  # SERVICE 1: Our Flask Application
+  # ---------------------------------------------------------------------------
+  student-app:
+    # Use the image we built (or pull from Docker Hub if not built locally)
+    image: student-management:v1
+
+    # Name of the running container
+    container_name: student-app
+
+    # Map host port 5000 to container port 5000
+    # You access the app at http://localhost:5000
+    ports:
+      - "5000:5000"
+
+    # Restart the container automatically if it crashes
+    restart: always
+
+    # Health check: Docker itself checks if the app is responding
+    # every 30 seconds. If it fails 3 times → container is "unhealthy"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+    networks:
+      - monitoring-network
+
+  # ---------------------------------------------------------------------------
+  # SERVICE 2: Prometheus
+  # Prometheus scrapes metrics from all targets every 15 seconds.
+  # UI available at: http://localhost:9090
+  # ---------------------------------------------------------------------------
+  prometheus:
+    # Official Prometheus image from Docker Hub
+    image: prom/prometheus:latest
+    container_name: prometheus
+
+    ports:
+      - "9090:9090"
+
+    # Mount our prometheus.yml config file into the container
+    # The container reads this file at startup
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./alert_rules.yml:/etc/prometheus/alert_rules.yml
+      # Persistent storage: save metrics data even if container restarts
+      - prometheus-data:/prometheus
+
+    # Command line arguments to Prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      # Keep metrics for 15 days
+      - '--storage.tsdb.retention.time=15d'
+      # Enable API for Grafana to read rules
+      - '--web.enable-lifecycle'
+
+    restart: always
+    networks:
+      - monitoring-network
+
+  # ---------------------------------------------------------------------------
+  # SERVICE 3: Grafana
+  # Grafana reads from Prometheus and shows beautiful dashboards.
+  # UI available at: http://localhost:3000
+  # Default login: admin / admin (you will be asked to change on first login)
+  # ---------------------------------------------------------------------------
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+
+    ports:
+      - "3000:3000"
+
+    # Environment variables to pre-configure Grafana
+    environment:
+      # Default admin credentials (change after first login!)
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
+      # Organisation name shown in the UI
+      - GF_AUTH_ANONYMOUS_ENABLED=false
+      # Allow Grafana to auto-provision datasources (Prometheus) from a file
+      - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
+
+    volumes:
+      # Persistent storage: save dashboards and settings
+      - grafana-data:/var/lib/grafana
+      # Auto-configure Prometheus as a datasource
+      - ./grafana-provisioning:/etc/grafana/provisioning
+
+    restart: always
+    # Grafana depends on Prometheus — start Prometheus first
+    depends_on:
+      - prometheus
+
+    networks:
+      - monitoring-network
+
+  # ---------------------------------------------------------------------------
+  # SERVICE 4: Node Exporter
+  # Exports system metrics: CPU, memory, disk, network.
+  # Prometheus scrapes this at http://node-exporter:9100/metrics
+  # ---------------------------------------------------------------------------
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: node-exporter
+
+    ports:
+      - "9100:9100"
+
+    # Give node-exporter read access to the host's filesystem
+    # so it can report actual CPU/memory/disk of YOUR computer
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+
+    restart: always
+    networks:
+      - monitoring-network
+
+# =============================================================================
+# NETWORKS: All containers share this network
+# =============================================================================
+networks:
+  monitoring-network:
+    driver: bridge
+
+# =============================================================================
+# VOLUMES: Persistent storage (data survives container restarts)
+# =============================================================================
+volumes:
+  prometheus-data:
+    driver: local
+  grafana-data:
+    driver: local

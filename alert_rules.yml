@@ -1,0 +1,120 @@
+# alert_rules.yml
+# ================
+# Prometheus Alert Rules
+#
+# These rules define WHEN Prometheus should fire an alert.
+# Prometheus evaluates these rules every evaluation_interval (15 seconds).
+#
+# ALERT FLOW:
+#   Problem occurs → Prometheus detects metric crosses threshold
+#   → Alert state = "pending" → (after 'for' duration) → Alert state = "firing"
+#   → Grafana receives the alert → Notification sent (email/Slack etc.)
+#
+# HOW TO READ A RULE:
+#   alert: Name of the alert
+#   expr:  A PromQL expression that evaluates to true/false
+#   for:   How long the condition must be true before firing (avoids false alarms)
+#   labels: Tags added to the alert (used for routing)
+#   annotations: Human-readable message shown in the notification
+
+groups:
+  - name: student_management_alerts
+    rules:
+
+      # -----------------------------------------------------------------------
+      # ALERT 1: High CPU Usage
+      # -----------------------------------------------------------------------
+      # WHAT: Fires when CPU usage is above 80% for more than 5 minutes.
+      # WHY:  Sustained high CPU means the server is overloaded.
+      #       We use 'for: 5m' to avoid alerts from brief CPU spikes
+      #       (e.g., a momentary high load during startup).
+      #
+      # PromQL EXPRESSION EXPLAINED:
+      #   100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)
+      #   → node_cpu_seconds_total{mode="idle"} = time CPU spent doing nothing
+      #   → rate(...[5m]) = rate of change over last 5 minutes
+      #   → avg by (instance) = average across all CPU cores
+      #   → 100 - (idle%) = used%
+      # -----------------------------------------------------------------------
+      - alert: HighCPUUsage
+        expr: >
+          100 - (avg by (instance)
+          (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+          team: devops
+        annotations:
+          summary: "HIGH CPU ALERT on {{ $labels.instance }}"
+          description: >
+            CPU usage is {{ $value | printf "%.1f" }}% on instance {{ $labels.instance }}.
+            This has been above 80% for more than 5 minutes.
+            Action: Check for runaway processes.
+
+      # -----------------------------------------------------------------------
+      # ALERT 2: Application DOWN
+      # -----------------------------------------------------------------------
+      # WHAT: Fires when the student management app is not responding.
+      # WHY:  If the app is down, students cannot access the system.
+      #       This is the most critical alert.
+      #
+      # PromQL EXPRESSION EXPLAINED:
+      #   up{job="student-app"} == 0
+      #   → Prometheus tracks whether each scrape target is reachable
+      #   → up = 1 means reachable (app is running)
+      #   → up = 0 means NOT reachable (app is down)
+      # -----------------------------------------------------------------------
+      - alert: ApplicationDown
+        expr: up{job="student-app"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          team: devops
+        annotations:
+          summary: "CRITICAL: Student Management App is DOWN!"
+          description: >
+            The student management application at {{ $labels.instance }}
+            has been unreachable for more than 1 minute.
+            Action: Check if the Docker container is running.
+            Command: docker ps | grep student-app
+
+      # -----------------------------------------------------------------------
+      # ALERT 3: High Memory Usage
+      # -----------------------------------------------------------------------
+      # WHAT: Fires when available memory drops below 10%.
+      # WHY:  Low memory causes slowdowns and crashes.
+      # -----------------------------------------------------------------------
+      - alert: HighMemoryUsage
+        expr: >
+          (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100 < 10
+        for: 5m
+        labels:
+          severity: warning
+          team: devops
+        annotations:
+          summary: "High Memory Usage on {{ $labels.instance }}"
+          description: >
+            Available memory is only {{ $value | printf "%.1f" }}% on {{ $labels.instance }}.
+            This has been below 10% for more than 5 minutes.
+            Action: Check for memory leaks or restart services.
+
+      # -----------------------------------------------------------------------
+      # ALERT 4: High Disk Usage
+      # -----------------------------------------------------------------------
+      # WHAT: Fires when disk usage exceeds 85%.
+      # WHY:  A full disk causes application crashes and data loss.
+      # -----------------------------------------------------------------------
+      - alert: HighDiskUsage
+        expr: >
+          100 - ((node_filesystem_avail_bytes{mountpoint="/"}
+          / node_filesystem_size_bytes{mountpoint="/"}) * 100) > 85
+        for: 10m
+        labels:
+          severity: warning
+          team: devops
+        annotations:
+          summary: "High Disk Usage on {{ $labels.instance }}"
+          description: >
+            Disk usage is {{ $value | printf "%.1f" }}% on {{ $labels.instance }}.
+            Action: Clean up old Docker images or logs.
+            Command: docker system prune -f

@@ -1,0 +1,22 @@
+# grafana-provisioning/datasources/prometheus.yml
+# ================================================
+# This file tells Grafana to automatically connect to Prometheus.
+# Without this, you would have to manually add Prometheus as a
+# datasource in the Grafana UI every time you restart.
+#
+# With this file, Grafana connects to Prometheus AUTOMATICALLY on startup.
+
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    # 'access: proxy' = Grafana server fetches data from Prometheus
+    # (Grafana talks to Prometheus on behalf of your browser)
+    access: proxy
+    # URL inside Docker network: use service name 'prometheus' as hostname
+    url: http://prometheus:9090
+    # Make this the default datasource (selected automatically in panels)
+    isDefault: true
+    # Keep this datasource even if the provisioning file is removed
+    editable: true

@@ -1,0 +1,87 @@
+# prometheus.yml
+# ==============
+# This is the configuration file for Prometheus.
+# It tells Prometheus:
+#   1. How often to collect metrics (scrape_interval)
+#   2. WHERE to collect metrics from (scrape_configs → targets)
+#
+# Prometheus works by "scraping" — it sends an HTTP GET request to each
+# target's /metrics endpoint every scrape_interval seconds.
+
+global:
+  # Scrape every 15 seconds (collect metrics every 15 seconds)
+  scrape_interval: 15s
+
+  # Re-evaluate alert rules every 15 seconds
+  evaluation_interval: 15s
+
+# =============================================================================
+# ALERTING: Where to send alerts when a rule fires
+# We use Grafana's built-in alerting, but list Alertmanager for completeness.
+# =============================================================================
+# alerting:
+#   alertmanagers:
+#     - static_configs:
+#         - targets: ['localhost:9093']
+
+# =============================================================================
+# RULE FILES: Load alert rules from these files
+# =============================================================================
+rule_files:
+  - "alert_rules.yml"
+
+# =============================================================================
+# SCRAPE CONFIGS: List of systems Prometheus will collect metrics from
+# Each item is one "job" (a source of metrics).
+# =============================================================================
+scrape_configs:
+
+  # ---------------------------------------------------------------------------
+  # JOB 1: Prometheus itself
+  # Prometheus monitors itself — meta-monitoring.
+  # Endpoint: http://localhost:9090/metrics
+  # ---------------------------------------------------------------------------
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+        labels:
+          service: 'prometheus'
+
+  # ---------------------------------------------------------------------------
+  # JOB 2: Node Exporter — System Metrics
+  # Node Exporter exposes CPU, memory, disk, network metrics.
+  # It runs as a separate container on port 9100.
+  # Endpoint: http://node-exporter:9100/metrics
+  # ---------------------------------------------------------------------------
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+        labels:
+          service: 'system-metrics'
+          host: 'localhost'
+
+  # ---------------------------------------------------------------------------
+  # JOB 3: Our Flask Application
+  # We use the /health endpoint to check if the app is UP.
+  # For full metrics, you would add flask-prometheus-metrics library.
+  # For this project, blackbox_exporter probes the /health URL.
+  # ---------------------------------------------------------------------------
+  - job_name: 'student-app'
+    metrics_path: '/health'
+    static_configs:
+      - targets: ['host.docker.internal:5000']
+        labels:
+          service: 'student-management-app'
+          environment: 'production'
+
+  # ---------------------------------------------------------------------------
+  # JOB 4: cAdvisor — Docker Container Metrics
+  # cAdvisor (Container Advisor) monitors running Docker containers.
+  # Shows CPU and memory usage PER container.
+  # Endpoint: http://cadvisor:8080/metrics
+  # ---------------------------------------------------------------------------
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
+        labels:
+          service: 'docker-containers'
