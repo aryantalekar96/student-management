@@ -6,35 +6,26 @@
  * WINDOWS VERSION — uses 'bat' instead of 'sh'
  *
  * WHY bat NOT sh?
- *   sh  = Linux/Mac shell command  (bash)
- *   bat = Windows shell command    (cmd.exe)
- *   Jenkins on Windows cannot run 'sh' — it throws "cannot find file sh"
- *   So every shell command must use 'bat' on Windows.
+ *   sh  = Linux/Mac shell  (not available on Windows Jenkins)
+ *   bat = Windows cmd.exe  (correct for Windows)
  *
  * PIPELINE STAGES:
- * 1. Checkout           → Download the latest code from GitHub
+ * 1. Checkout           → Download latest code from GitHub
  * 2. Install Dependencies → pip install -r requirements.txt
  * 3. Build              → Verify app.py imports without errors
- * 4. Test               → pytest test_app.py (GOLDEN RULE gate)
+ * 4. Test               → pytest test_app.py  ← GOLDEN RULE GATE
  * 5. Docker Build       → docker build
  * 6. Docker Push        → docker push to Docker Hub
- * 7. Deploy             → stop old container, start new one
+ * 7. Deploy             → stop old container, start new one on monitoring network
  *
- * SECURITY: Docker Hub password stored in Jenkins Credentials
- * ID: 'dockerhub-creds' — never typed in plain text here.
+ * SECURITY: Docker Hub password stored in Jenkins Credentials ID: 'dockerhub-creds'
  * =============================================================================
  */
 
 pipeline {
 
-    // -------------------------------------------------------------------------
-    // AGENT: Run on any available machine (our Windows laptop)
-    // -------------------------------------------------------------------------
     agent any
 
-    // -------------------------------------------------------------------------
-    // ENVIRONMENT: Variables shared across all stages
-    // -------------------------------------------------------------------------
     environment {
         DOCKER_USERNAME  = 'aryantalekar96'
         IMAGE_NAME       = "${DOCKER_USERNAME}/student-management"
@@ -45,136 +36,104 @@ pipeline {
         DOCKER_CREDS_ID  = 'dockerhub-creds'
     }
 
-    // -------------------------------------------------------------------------
-    // OPTIONS: Pipeline settings
-    // -------------------------------------------------------------------------
     options {
         timestamps()
         timeout(time: 20, unit: 'MINUTES')
         buildDiscarder(logRotator(numToKeepStr: '5'))
     }
 
-    // =========================================================================
-    // STAGES
-    // =========================================================================
     stages {
 
         // ---------------------------------------------------------------------
         // STAGE 1: Checkout
         // Downloads latest code from GitHub into Jenkins workspace.
-        // 'checkout scm' uses the GitHub URL configured in the Jenkins job.
+        // checkout scm uses the GitHub URL configured in the Jenkins job.
+        // bat 'dir' = Windows equivalent of Linux 'ls -la'
         // ---------------------------------------------------------------------
         stage('1 - Checkout') {
             steps {
                 echo '========== STAGE 1: Checkout =========='
                 echo 'Downloading the latest code from GitHub...'
-
                 checkout scm
-
                 echo 'Code downloaded successfully!'
-
-                // 'bat dir' = Windows equivalent of 'ls -la' on Linux
-                // Shows all files in the Jenkins workspace folder
                 bat 'dir'
             }
         }
 
         // ---------------------------------------------------------------------
         // STAGE 2: Install Dependencies
-        // Installs all Python packages listed in requirements.txt.
-        // Jenkins workspace is a clean folder — we must install every time.
+        // Installs all Python packages from requirements.txt.
         // ---------------------------------------------------------------------
         stage('2 - Install Dependencies') {
             steps {
                 echo '========== STAGE 2: Install Dependencies =========='
                 echo 'Installing Python packages from requirements.txt...'
-
-                // pip install reads requirements.txt and installs flask, pytest, requests
                 bat 'pip install -r requirements.txt'
-
-                // Show installed packages — useful for debugging version issues
                 bat 'pip list'
-
                 echo 'All dependencies installed!'
             }
         }
 
         // ---------------------------------------------------------------------
         // STAGE 3: Build
-        // Imports app.py to check for syntax errors.
-        // If app.py has a typo or broken import, this stage fails immediately.
-        // This is faster than waiting for tests to discover the same problem.
+        // Imports app.py to verify no syntax errors exist.
+        // Fails immediately if app.py has any broken code.
         // ---------------------------------------------------------------------
         stage('3 - Build') {
             steps {
                 echo '========== STAGE 3: Build =========='
                 echo 'Checking that the Flask app imports without errors...'
-
-                // python -c runs a single Python statement
-                // If app.py has ANY syntax error, this throws an exception
                 bat 'python -c "import app; print(\'App imported successfully\')"'
-
                 echo 'Build check passed!'
             }
         }
 
         // ---------------------------------------------------------------------
-        // STAGE 4: Test  ←  THE GOLDEN RULE GATE
+        // STAGE 4: Test  ← THE GOLDEN RULE GATE
         //
-        // THIS IS THE MOST IMPORTANT STAGE.
-        // If ANY test fails here:
-        //   → Jenkins marks this stage RED
+        // If ANY test fails:
+        //   → This stage turns RED
         //   → Stages 5, 6, 7 are ALL skipped
-        //   → No Docker image is built
-        //   → No deployment happens
-        //   → The old working version keeps running
+        //   → No Docker image built, no deployment
+        //   → Old working version keeps running
         //
-        // This enforces the Golden Rule:
-        //   "Only tested, verified code gets deployed."
+        // This enforces: "Only tested code gets deployed."
         // ---------------------------------------------------------------------
         stage('4 - Test') {
             steps {
                 echo '========== STAGE 4: Test =========='
                 echo 'Running PyTest automated tests...'
                 echo 'GOLDEN RULE: If ANY test fails, pipeline STOPS here!'
-
-                // -v        = verbose (show each test name)
-                // --tb=short = short error message on failure
                 bat 'python -m pytest test_app.py -v --tb=short'
-
                 echo 'All tests PASSED! Proceeding to Docker build...'
             }
         }
 
         // ---------------------------------------------------------------------
         // STAGE 5: Docker Build
-        // Builds a Docker image from our Dockerfile.
+        // Builds Docker image from Dockerfile.
         // Only runs if ALL tests in Stage 4 passed.
-        // The image contains: Python + Flask + our app code, all in one box.
         // ---------------------------------------------------------------------
         stage('5 - Docker Build') {
             steps {
                 echo '========== STAGE 5: Docker Build =========='
                 echo "Building Docker image: ${FULL_IMAGE}"
-
-                // Build the image and tag it with username/appname:version
                 bat "docker build -t ${FULL_IMAGE} ."
-
-                // List images to confirm it was created
                 bat "docker images ${IMAGE_NAME}"
-
                 echo "Docker image built: ${FULL_IMAGE}"
             }
         }
 
         // ---------------------------------------------------------------------
         // STAGE 6: Docker Push
-        // Pushes the image to Docker Hub.
+        // Pushes image to Docker Hub using credentials stored securely in Jenkins.
         //
-        // SECURITY — withCredentials():
-        //   Jenkins retrieves username+password from its encrypted vault.
-        //   The password is injected as an environment variable (DOCKER_PSW).
-        //   It is NEVER written to disk or shown in logs (masked as ****).
+        // withCredentials: retrieves username+password from Jenkins vault.
+        // The password is NEVER shown in logs (masked as ****).
+        //
+        // NOTE: No space before pipe (echo %DOCKER_PSW%|) — space causes
+        // Windows to include it in the password, causing auth failure.
+        // Single quotes prevent Groovy from interpreting %VAR% before cmd does.
         // ---------------------------------------------------------------------
         stage('6 - Docker Push') {
             steps {
@@ -197,35 +156,31 @@ pipeline {
 
         // ---------------------------------------------------------------------
         // STAGE 7: Deploy
-        // Stops the old container and starts a fresh one from the new image.
-        // This is the "Continuous Deployment" part of CI/CD.
+        // Stops old container, starts fresh one from the new image.
         //
-        // || exit 0 = Windows equivalent of Linux's '|| true'
-        // It means: "if this command fails, don't stop the pipeline"
-        // Used for stop/rm because the container may not exist on first run.
+        // --network student-management_monitoring-network:
+        //   Puts the container on the same Docker network as Prometheus.
+        //   This means Prometheus can reach the app at student-app:5000
+        //   automatically — no manual 'docker network connect' needed.
+        //
+        // sleep(time:3): Jenkins built-in — works on all OS.
+        //   Replaces 'timeout /t 3' which is Windows-only and can fail in Jenkins.
+        //
+        // || exit 0: Windows equivalent of Linux '|| true'
+        //   Prevents pipeline failure if container doesn't exist yet (first run).
         // ---------------------------------------------------------------------
         stage('7 - Deploy') {
             steps {
                 echo '========== STAGE 7: Deploy =========='
                 echo "Deploying container: ${CONTAINER_NAME}"
 
-                // Stop old container — || exit 0 prevents failure if not running
                 bat "docker stop ${CONTAINER_NAME} || exit 0"
                 bat "docker rm   ${CONTAINER_NAME} || exit 0"
 
-                // Start new container
-                // -d             = run in background (detached)
-                // -p 5000:5000   = expose port 5000 to the host
-                // --name         = give it a memorable name
-                // --restart always = auto-restart if machine reboots
-                // --network = join monitoring network so Prometheus can reach the app
                 bat "docker run -d -p ${APP_PORT}:${APP_PORT} --name ${CONTAINER_NAME} --network student-management_monitoring-network --restart always ${FULL_IMAGE}"
 
-                // Wait 3 seconds for the container to fully start
-                // sleep() is a Jenkins built-in — works on all OS unlike 'timeout' (Windows-only)
                 sleep(time: 3, unit: 'SECONDS')
 
-                // Verify container is running — 'findstr' is Windows grep
                 bat "docker ps | findstr ${CONTAINER_NAME}"
 
                 echo "Deployment complete! App running at http://localhost:${APP_PORT}"
@@ -233,15 +188,12 @@ pipeline {
         }
     }
 
-    // =========================================================================
-    // POST: Runs after all stages finish (pass or fail)
-    // =========================================================================
     post {
         success {
             echo '=============================================='
             echo ' PIPELINE SUCCEEDED! All 7 stages passed!'
-            echo " App is live at: http://localhost:${APP_PORT}"
-            echo " Docker Hub:     ${FULL_IMAGE}"
+            echo " App        : http://localhost:${APP_PORT}"
+            echo " Docker Hub : https://hub.docker.com/r/${DOCKER_USERNAME}/student-management"
             echo '=============================================='
         }
         failure {
